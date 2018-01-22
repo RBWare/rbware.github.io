@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="RBWare : ">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>RBWare</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/RBWare">View on GitHub</a>
+          <table class="header-table-main">
+              <td  class="header-table">
+                <img src="images/profile.png" class="profile-img">
+              </td>
+              <td class="header-table">
+                <h1 id="project_title" class="header-text">
+                  </img> RBWare
+                </h1>
+                <p id="project_tagline">Software development by Ryan Bailey</p>
+              </td>
+          </table>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h2>
+          <span aria-hidden="true" class="octicon octicon-link">Blog.</span>
+        </h2>
+        <section>
+          <h4>
+            <span aria-hidden="true" class="octicon octicon-link">Capture The Flag: RickdiculouslyEasy</span>
+          </h4>
+          <h5>
+            <span aria-hidden="true" class="octicon octicon-link">22 January 2018</span>
+          </h5>
+            <p>
+              <article>
+              <p>I’ve been playing with a lot of the “capture the flag” games recently on VulnHub. After a few hours I finally completed the “RickdiculouslyEasy” challenge in its entirety and wanted to post an overview for how I did it, so others might be able to learn from it.</p>
+
+              <p>Link on VulnHub: <a href="https://www.vulnhub.com/entry/rickdiculouslyeasy-1,207/">https://www.vulnhub.com/entry/rickdiculouslyeasy-1,207/</a><br />
+              Setup: Kali Linux (or equivalent), RickdiculouslyEasy image in VirtualBox</p>
+
+              <p>When the box boots, it kind of cheats and gives you address and the first known, open port. In my case it said, "Admin Console: https://192.168.2.104:9090/". To me, this seemed like a bit of a cheat, but this is supposed to be really easy. For reference, if you're ever looking to discover the location yourself, you can use the following:
+                <br />
+                <code>nmap -sS 192.168.2.0/24</code><br />
+                or<br />
+                <code>arp-scan --interface=eth0 --localnet</code>
+              </p>
+
+              <p>This will scan your local network, and display the connected devices.</p>
+
+              <p>So first things first, I setup a working directory... I have mine in home / vulnhub / rickdiculously<br />
+                <code>cd</code><br />
+                <code>mkdir vulnhub</code><br />
+                <code>cd vulnhub</code><br />
+                <code>mkdir rickdiculously</code><br />
+                <code>cd rickdiculously</code><br />
+              </p>
+              <p>Now that I know our target's location, I need to scan and grab some more information on the box. To do that, I use nmap and specify a wide port range.
+                <br />
+                <code>nmap -sS 192.168.2.104 -p 1-65535</code><br /><br />
+
+                This will scan every port from 1 to 65535.<br />
+                <img src="images/vulnhub-rickdiculously/1.png"><br /><br />
+              </p>
+              <p>I can see that I have quite a few open ports and standard services available. Since the box booted and mentioned the "Admin Console" on 9090, I'm going to head there first. So I open the browser and navigate to
+
+                <code>https://192.168.2.104:9090</code><br /><br /><br />
+
+
+                <img src="images/vulnhub-rickdiculously/2.png"><br /><br />
+
+                Immediately I get a flag!<br /><br />
+
+                <blockquote>
+                  FLAG{THERE IS NO ZEUS, IN YOUR FACE!} - 10 POINTS<br />
+                  Total: 10/130
+                </blockquote>
+              </p>
+              <p>Viewing the source, the page looks pretty standard, so I'll move on to another one of our ports. I like to use telnet to see what kind of feedback easy port provides. So I jump to the next unknown port, 13337.
+
+                <code>telnet 192.168.2.104 13337</code><br /><br />
+
+                <img src="images/vulnhub-rickdiculously/3.png"><br /><br />
+
+                Bam! Grabbed another flag!<br /><br />
+
+                <blockquote>
+                  FLAG{TheyFoundMyBackDoorMorty} - 10Points<br />
+                  Total: 20/130
+                </blockquote>
+              </p>
+              <p>Things are going pretty well so far, but that port immediately disconnected me, so it's on to the next one, 22222.
+
+              <code>telnet 192.168.2.104 22222</code><br /><br />
+
+                <img src="images/vulnhub-rickdiculously/4.png"><br /><br />
+
+                This appears to SSH running on a non-standard port! I make a note, as this could be important if I end up with a login.
+              </p>
+              <p>Now to telnet into port 60000.<br /><br />
+
+                <img src="images/vulnhub-rickdiculously/5.png"><br /><br />
+
+                I immediately end up with a reverse shell, that appears to be running as root. Even "whoami" prints root, excellent. Listing the files in the directory shows a file, FLAG.txt.
+              </p>
+              <code>cat FLAG.txt</code><br /><br />
+
+              <blockquote>
+                FLAG{Flip the pickle Morty!} - 10 points<br />
+                Total: 30/130
+              </blockquote>
+              <p>
+                Now, most other commands don't seem to be working. I tried to `cd` around, listing files in known directories, nothing seemed to be working. At this point, after a bit of frustration, I decided to circle back to the first few ports that I haven't looked at yet. FTP is standard on 21 and has many attacks, and another ssh server seems to be running on port 22. What interested me, however, was that a standard web server (apache? Tomcat?) was running on port 80. Back to the browser I fired up<br /><br />
+
+                <code>http://192.168.2.104</code><br /><br />
+
+                <img src="images/vulnhub-rickdiculously/6.png"><br /><br />
+                <img src="images/vulnhub-rickdiculously/7.png">
+              </p>
+              <p>
+                This direction appeared to be a dead-end. Nothing in the source, nothing on the page that would give anything away. I even pulled the morty.png image down and analyzed it, hoping some very basic stenography was implemented, but no luck.
+                <br />
+                I gave it some additional thought, and decided that maybe there was something I'd missed. I knew there had to be a flag here. I decided to check and see if robots.txt was present. This file is included in most websites, which tells search engines what to index / ignore.
+                <br /><br />
+                They're Robots Morty! It's ok to shoot them! They're just Robots!
+                <br /><br />
+                <code>/cgi-bin/root_shell.cgi</code><br />
+                <code>/cgi-bin/tracertool.cgi</code><br />
+                <code>/cgi-bin/*</code><br /><br />
+              </p>
+              <p>
+                It was! And it gives me a few more places to check. root_shell.cgi! That looks like exactly what I need. Unfortunately once it's opened, it's another dead-end. Even the code for the page laughs at me.
+                <br /><br />
+                <img src="images/vulnhub-rickdiculously/8.png"><br /><br />
+                <img src="images/vulnhub-rickdiculously/9.png">
+                Switching to tracertool.cgi loads an actual page. However, there is once again nothing embedded in the page source, so onto the tool itself. Typing in 127.0.0.1 looks to be returning actual data. It also looks suspiciously like it's just appending all input after the "traceroute" command.
+                <br /><br />
+                First I attempted to simply include a second command to follow traceroute by adding <code>&&</code>. This didn't seem to work the way I wanted it to. Next, I tried terminating the string for the current command by adding a ";", and then adding a simple <code>echo hello</code> into the box.
+                <br /><br />
+                <img src="images/vulnhub-rickdiculously/11.png">
+                <br /><br />
+                Success!
+                <br /><br />
+                So now I know that we can run commands against this "trace" input. I just wanted to see how extensive it was so I went with, <code>ls -laR</code>
+                <br /><br />
+                <img src="images/vulnhub-rickdiculously/12.png">
+                <br /><br />
+                Nothing much to see, it looks like I had the entire directory structure already. How about one directory up?
+                <br /><br />
+                <code>ls -laR ../</code>
+                <br /><br />
+                <img src="images/vulnhub-rickdiculously/13.png"><br /><br />
+                It seems I'm getting somewhere now! An HTML directory, "passwords" with a FLAG in it, and a passwords.html file! I entered http://192.168.2.104/passwords/FLAG.txt and grabbed the next flag
+                <br /><br />
+                <blockquote>
+                  FLAG{Yeah d- just don't do it.} - 10 points<br />
+                  Total: 40/130
+                </blockquote>
+              </p>
+              <p>
+                Then I went ahead and opened up <code>http://192.168.2.104/passwords/passwords.html</code><br /><br />
+                <img src="images/vulnhub-rickdiculously/14.png"><br /><br />
+                Not much to see here, it looks like this was just meant to insult me. However, when checking out the page source, I noticed "Password: winter" as a comment near the end of the file.
+                <br /><br />
+                <img src="images/vulnhub-rickdiculously/15.png">
+              </p>
+              <p>
+                So now I have a password, but no user. So I switch back to my traceroute cgi bin to try and get a bit more info.
+                <br /><br />
+                <code>cat /etc/passwd</code>
+                <br /><br />
+                <img src="images/vulnhub-rickdiculously/16.png">
+                <br /><br />
+                Pretty decent trolling on this one. Someone removed "cat" and replaced it with a binary that outputs an ascii cat instead. However, they seemed to leave head/tail/more/less commands all perfectly intact.
+                <br /><br />
+                <code>less /etc/passwd</code>
+                <br /><br />
+                <img src="images/vulnhub-rickdiculously/17.png">
+              </p>
+              <p>
+                So now I have a full list of users on the system. Most notably: RickSanchez, Morty, Summer, apache, and root (since they all show access to /bin/bash). Remembering our password, "winter" from before, the most likely pairing for this would be to the user, "Summer". So heading to the non-standard ssh port I found, on 22222, and try the login.
+                <br /><br />
+                <code>ssh Summer@192.168.2.104 -p22222</code>
+                <br /><br />
+                <img src="images/vulnhub-rickdiculously/18.png">
+                <br /><br />
+                And now I'm in as Summer! Running <code>ls -laR</code> gives me another short file list, including an additional FLAG.txt file. However, the "cat" binary is _still_ set to print the nice ascii cat. So
+                <br /><br />
+                <code>head FLAG.txt</code>
+                <br /><br />
+                <blockquote>
+                  FLAG{Get off the high road Summer!} - 10 Points<br />
+                  Total: 50/130
+                </blockquote>
+                <br /><br />
+                My immediate thought after that is to see if I can escalate my privileges.
+                <br /><br />
+                <code>sudo su</code>
+                <br /><br />
+                <img src="images/vulnhub-rickdiculously/19.png">
+              </p>
+              <p>
+                Well, looks like she isn't a root user, so no dice there.
+                <br /><br />
+                I then decide to check all of her hidden bash files and notice that nothing is lurking that looks useful. So again, I try moving up a directory to see what kind of access I have.
+                <br /><br />
+                <code>ls -laR ../</code>
+                <br /><br />
+                <img src="images/vulnhub-rickdiculously/20.png">
+                <br /><br />
+                Jackpot! There is a trove of information here, that Summer clearly has some level of access to. First, is the obviously suspicious "NotAFlag" file in Rick's directory.
+                <br /><br />
+                <code>head ../RickSanchez/ThisDoesntContainAnyFlags/NotAFlag.txt</code>
+                <br /><br />
+                And it laughs again. I guess it really wasn't a flag. Looking at Rick's other directory I see that he has a "safe" binary. So I give that a try next:
+                <br /><br />
+                <code>../RickSanchez/RICKS_SAFE/safe</code>
+                <br /><br />
+                <img src="images/vulnhub-rickdiculously/21.png">
+              </p>
+              <p>
+                Permission denied. I don't have executable access to this file. I do however, have read access. So I copy to summer's directory, so I can set access myself.
+                <br /><br />
+                <code>cp ../RickSanchez/RICKS_SAFE/safe .</code><br />
+                <code>chmod +x safe</code><br />
+                <code>./safe</code><br /><br />
+                <img src="images/vulnhub-rickdiculously/22.png">
+              </p>
+              <p>
+                So it looks like it wants an argument. Using random data for it doesn't seem to do much. Trying to dig through the binary contents with head/less also doesn't seem to yield much. I then notice that in Morty's directory, he has a file called, "Safe_Password.jpg".
+                <br /><br />
+                <code>head ../Morty/Safe_Password.jpg</code>
+                <br /><br />
+                <img src="images/vulnhub-rickdiculously/23.png"><br /><br />
+                It looks like a mess, except for one thing, "The Safe Password: File: /home/Morty/journal.txt.zip Password: Meeseek". So I copy over the file to the local directory, since I'm pretty sure I only have read access for the other users' directories.
+                <br /><br />
+                <code>cp ../Morty/journal.txt.zip .</code><br />
+                <code>unzip journal.txt.zip</code><br />
+                <code>head journal.txt</code><br /><br />
+                <img src="images/vulnhub-rickdiculously/24.png">
+                <br /><br />
+                Another flag!
+                <blockquote>
+                  FLAG: {131333} - 20 points<br />
+                  Total: 70/130
+                </blockquote>
+              </p>
+              <p>
+                I didn't recognize the "131333" as anything from the show, so I tried it with the safe file, since it was mentioned in the flag line with the preface, "Anyway. Here it is:"
+                <br /><br />
+                <code>./safe 131333</code><br /><br />
+                <img src="images/vulnhub-rickdiculously/24.png">
+                <br /><br />
+                Which scored another flag!<br /><br />
+                <blockquote>
+                  FLAG{And Awwwaaaayyyy we Go!} - 20 Points<br />
+                  Total: 90/130
+                </blockquote>
+                <br /><br />
+                So this got me at first, and I had to turn to the internet to get some help. I found that Rick's band name was "The Flesh Curtains". After some additional searching I found a tool called, "mp64" or mask processor. This tool allows you to create a wordlist for brute forcing. Knowing that the output should be something like
+                <br /><br />
+                UPPERCASE + DIGIT + One of the Words
+                <br /><br />
+                I built the lists using mp64:
+                <br />
+                <code>mp64 ?u?dThe >> wordlist0</code><br />
+                <code>mp64 ?u?dFlesh >> wordlist1</code><br />
+                <code>mp64 ?u?dCurtains >> wordlist2</code><br />
+                <code>mp64 ?u?dthe >> wordlist3</code><br />
+                <code>mp64 ?u?dflesh >> wordlist4</code><br />
+                <code>mp64 ?u?dcurtains >> wordlist5</code><br /><br />
+
+                I wasn't sure if the band name started with a capital letter or not, so I had to create 6 total lists, with each variant. Next I knew that the login had to be for either "root" (assuming "Rick" is the box owner), or "RickSanchez". So I created a "users" file, and added 2 lines to it.
+                <br /><br />
+                <code>RickSanchez</code><br />
+                <code>root</code><br /><br />
+                <br /><br />
+                At this point, I had a good password wordlist and user list combo. So I decided to fire up patator, which is perfect for this exact use case. Patator is native to Kali and has a bunch of really great modules to brute force logins.
+                <br /><br />
+                <code>patator ssh_login host=192.168.2.104 port=22222 user=FILE0 0=users password=FILE1 1=wordlist0 -x ignore:mesg="Authentication failed."</code>
+                <br /><br />
+                I had to iterate through my "wordlist" entries manually, because I was too lazy to script it. I also added the "ignore:mesg" portion so it wouldn't flood my terminal window with different attempts. After about 20 minutes, the perfect amount of time to brew more coffee, it came back with a match.
+                <br /><br />
+                <img src="images/vulnhub-rickdiculously/26.png">
+                <code>RickSanchez:P7Curtains</code>
+                <br /><br />
+              </p>
+              <p>
+
+                Trying the login
+                <br /><br />
+                <code>ssh RickSanchez@192.168.2.104 -p22222</code>
+                <br /><br />
+                Looks like I'm in as another user! Again, my first attempt here is to try and escalate my privileges.
+                <br /><br />
+                <code>sudo su</code>
+                <br /><br />
+                ROOT ACCESS! Here we go! At this point, I know I have full access to every directory on the box. A simple find command should pick up most of what's left, since every flag so far has been named the exact same way.
+                <br /><br />
+                <code>find / -name FLAG*</code><br /><br />
+                <img src="images/vulnhub-rickdiculously/27.png">
+                <br /><br />
+                <code>head /root/FLAG.txt</code><br />
+                <blockquote>
+                  FLAG: {Ionic Defibrillator} - 30 points<br />
+                  Total: 120/130
+                </blockquote>
+                <br /><br />
+                <code>head /var/ftp/FLAG.txt</code><br />
+                <blockquote>
+                  FLAG{Whoa this is unexpected} - 10 points<br />
+                  Total: 130/130
+                </blockquote><br /><br />
+                And that's everything! I have a suspicion that there was probably another way in, via the FTP port, since a flag was hanging out there. I never got to the point where I tried to attack that port directly, but everything still worked out really well. I have to say, this challenge was a lot of fun, and really helped me to learn some cool new tools.
+              </p>
+            </article>
+            </p>
+        </section>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p>© Ryan Bailey 2018. All rights reserved.</p>
+      </footer>
+    </div>
+
+
+
+  </body>
+</html>
