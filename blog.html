@@ -145,7 +145,7 @@
                 It was! And it gives me a few more places to check. root_shell.cgi! That looks like exactly what I need. Unfortunately once it's opened, it's another dead-end. Even the code for the page laughs at me.
                 <br /><br />
                 <img src="images/vulnhub-rickdiculously/8.png"><br /><br />
-                <img src="images/vulnhub-rickdiculously/9.png">
+                <img src="images/vulnhub-rickdiculously/9.png"><br /><br />
                 Switching to tracertool.cgi loads an actual page. However, there is once again nothing embedded in the page source, so onto the tool itself. Typing in 127.0.0.1 looks to be returning actual data. It also looks suspiciously like it's just appending all input after the "traceroute" command.
                 <br /><br />
                 First I attempted to simply include a second command to follow traceroute by adding <code>&&</code>. This didn't seem to work the way I wanted it to. Next, I tried terminating the string for the current command by adding a ";", and then adding a simple <code>echo hello</code> into the box.
@@ -262,7 +262,7 @@
                 I didn't recognize the "131333" as anything from the show, so I tried it with the safe file, since it was mentioned in the flag line with the preface, "Anyway. Here it is:"
                 <br /><br />
                 <code>./safe 131333</code><br /><br />
-                <img src="images/vulnhub-rickdiculously/24.png">
+                <img src="images/vulnhub-rickdiculously/25.png">
                 <br /><br />
                 Which scored another flag!<br /><br />
                 <blockquote>
